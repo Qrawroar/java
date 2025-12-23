@@ -5,7 +5,7 @@ class Main{
     double price = 1.99;
     char currency = '$';
     String name = "Johny";
-    
+    boolean isStudent = true;
     
   }
 }
