@@ -1,0 +1,26 @@
+name: Discord GitHub Notifications
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  issues:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          MESSAGE="🚀 **New GitHub Activity by ${{ github.actor }}**
+📁 Repo: **${{ github.repository }}**
+🔔 Event: **${{ github.event_name }}**"
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\":\"$MESSAGE\"}" \
+               $DISCORD_WEBHOOK
