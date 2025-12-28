@@ -1,17 +1,42 @@
-name: Discord Notifications
+name: GitHub to Discord - Full Notification
 
 on:
   push:
+    branches: [main, master]
 
 jobs:
-  notify:
+  discord_notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send message to Discord
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Send Commit Details to Discord
         run: |
-          curl -H "Content-Type: application/json" \
-               -X POST \
-               -d '{"content":"🚀 New commit pushed to GitHub!"}' \
-               $DISCORD_WEBHOOK
+          WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+          
+          # Prepare variables
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          ACTOR="${{ github.actor }}"
+          TIMESTAMP="${{ github.event.head_commit.timestamp }}"
+
+          # Loop through all commits in the push
+          COMMITS=""
+          for c in $(echo "${{ toJSON(github.event.commits) }}" | jq -c '.[]'); do
+            COMMIT_ID=$(echo $c | jq -r '.id' | cut -c1-7)
+            COMMIT_MSG=$(echo $c | jq -r '.message')
+            COMMIT_URL=$(echo $c | jq -r '.url')
+            COMMITS="$COMMITS\n[$COMMIT_ID]($COMMIT_URL) - $COMMIT_MSG"
+          done
+
+          # Send embed message
+          curl -X POST -H "Content-Type: application/json" -d "{
+            \"embeds\": [{
+              \"title\": \"🚀 New Push by $ACTOR\",
+              \"color\": 3066993,
+              \"fields\": [
+                {\"name\": \"Repository\", \"value\": \"$REPO\", \"inline\": true},
+                {\"name\": \"Branch\", \"value\": \"$BRANCH\", \"inline\": true},
+                {\"name\": \"Commits\", \"value\": \"$COMMITS\"}
+              ],
+              \"footer\": {\"text\": \"Timestamp: $TIMESTAMP\"}
+            }]
+          }" $WEBHOOK
