@@ -24,5 +24,7 @@ class Main {
     System.out.println("Age: " + age);
     System.out.println("Gender: " + gender);
     System.out.println("Address: " + address);
+
+    
   }
 }
